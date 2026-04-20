@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symply</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <h1 id="app-name">🩺 Symply</h1>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="today-date" style="font-size:13px;opacity:0.8;"></span>
+      <button id="lang-btn" onclick="toggleLangPanel()" style="
+        background: rgba(255,255,255,0.2);
+        border: none;
+        color: white;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 13px;
+        cursor: pointer;
+      ">🌐 EN ▾</button>
+    </div>
+  </header>
+
+  <!-- Language Selector Panel -->
+  <div id="lang-panel" style="
+    display: none;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    position: sticky;
+    top: 52px;
+    z-index: 99;
+  ">
+    <div onclick="applyLanguage('en')" class="lang-opt" id="lang-en">🇬🇧 English</div>
+    <div onclick="applyLanguage('de')" class="lang-opt" id="lang-de">🇩🇪 Deutsch</div>
+    <div onclick="applyLanguage('fr')" class="lang-opt" id="lang-fr">🇫🇷 Français</div>
+    <div onclick="applyLanguage('es')" class="lang-opt" id="lang-es">🇪🇸 Español</div>
+    <div onclick="applyLanguage('ar')" class="lang-opt" id="lang-ar">🇸🇦 عربي</div>
+  </div>
+
+  <!-- Translation note -->
+  <div id="translation-note" style="
+    display:none;
+    font-size:11px;
+    color: var(--text-muted);
+    text-align:center;
+    padding: 4px 1rem;
+    background: var(--bg);
+  "></div>
+
+  <!-- PAGE 1: Symptoms -->
+  <div class="page active" id="page-symptoms">
+    <div class="card">
+      <h2 id="lbl-log-symptom">Log a symptom</h2>
+      <div class="form-group">
+        <label id="lbl-symptom-name">Symptom name</label>
+        <input type="text" id="symptom-name" placeholder="e.g. Headache, Nausea...">
+      </div>
+      <div class="form-group">
+        <label id="lbl-severity">Severity: <span id="severity-label">5</span>/10</label>
+        <div class="slider-row">
+          <span id="lbl-mild" style="font-size:12px;color:var(--text-muted)">Mild</span>
+          <input type="range" min="1" max="10" value="5" id="severity-slider">
+          <span id="lbl-severe" style="font-size:12px;color:var(--text-muted)">Severe</span>
+          <span class="slider-val" id="severity-val">5</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label id="lbl-symptom-notes">Notes (optional)</label>
+        <textarea id="symptom-notes" placeholder="When did it start?"></textarea>
+      </div>
+      <button class="btn btn-primary" id="btn-save-symptom" onclick="saveSymptom()">Save symptom</button>
+    </div>
+    <div class="card">
+      <h2 id="lbl-recent-symptoms">Recent symptoms</h2>
+      <div id="symptoms-list"><p class="no-data">No symptoms logged yet.</p></div>
+    </div>
+  </div>
+
+  <!-- PAGE 2: Mood -->
+  <div class="page" id="page-mood">
+    <div class="card">
+      <h2 id="lbl-how-feeling">How are you feeling today?</h2>
+      <div class="form-group">
+        <label id="lbl-mood">Mood</label>
+        <div class="mood-row" id="mood-selector">
+          <div class="mood-opt" data-val="1" onclick="selectMood(1)"><span>😞</span><span>Terrible</span></div>
+          <div class="mood-opt" data-val="2" onclick="selectMood(2)"><span>😕</span><span>Bad</span></div>
+          <div class="mood-opt" data-val="3" onclick="selectMood(3)"><span>😐</span><span>Okay</span></div>
+          <div class="mood-opt" data-val="4" onclick="selectMood(4)"><span>🙂</span><span>Good</span></div>
+          <div class="mood-opt" data-val="5" onclick="selectMood(5)"><span>😄</span><span>Great</span></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label id="lbl-energy">Energy level: <span id="energy-label">5</span>/10</label>
+        <div class="slider-row">
+          <span id="lbl-drained" style="font-size:12px;color:var(--text-muted)">Drained</span>
+          <input type="range" min="1" max="10" value="5" id="energy-slider">
+          <span id="lbl-energetic" style="font-size:12px;color:var(--text-muted)">Energetic</span>
+          <span class="slider-val" id="energy-val">5</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label id="lbl-mood-notes">Notes (optional)</label>
+        <textarea id="mood-notes" placeholder="Anything affecting your mood?"></textarea>
+      </div>
+      <button class="btn btn-primary" id="btn-save-checkin" onclick="saveMood()">Save check-in</button>
+    </div>
+    <div class="card">
+      <h2 id="lbl-recent-checkins">Recent check-ins</h2>
+      <div id="mood-list"><p class="no-data">No check-ins logged yet.</p></div>
+    </div>
+  </div>
+
+  <!-- PAGE 3: Medications -->
+  <div class="page" id="page-medications">
+    <div class="card">
+      <h2 id="lbl-add-medication">Add a medication</h2>
+      <div class="form-group" style="position:relative;">
+        <label id="lbl-med-name">Medication name</label>
+        <input type="text" id="med-name"
+          placeholder="Start typing e.g. Ibu..."
+          autocomplete="off"
+          oninput="searchDrugNames(this.value)">
+        <div id="drug-suggestions" style="
+          position:absolute;
+          background:var(--white);
+          border:1px solid var(--border);
+          border-radius:8px;
+          left:0; right:0;
+          top:calc(100% + 4px);
+          max-height:220px;
+          overflow-y:auto;
+          z-index:50;
+          display:none;
+          box-shadow:0 4px 12px rgba(0,0,0,0.1);
+        "></div>
+      </div>
+      <div class="form-group">
+        <label id="lbl-dose">Dose</label>
+        <input type="text" id="med-dose" placeholder="e.g. 400mg, 1 tablet...">
+      </div>
+      <div class="form-group">
+        <label id="lbl-frequency">Frequency</label>
+        <select id="med-frequency">
+          <option>Once daily</option>
+          <option>Twice daily</option>
+          <option>Three times daily</option>
+          <option>Every 4 hours</option>
+          <option>As needed</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="btn-save-medication" onclick="saveMedication()">Add medication</button>
+    </div>
+    <div class="card">
+      <h2 id="lbl-interaction-checker">Interaction checker</h2>
+      <p id="lbl-interaction-desc" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+        Checks your current medications for dangerous combinations.
+      </p>
+      <button class="btn btn-primary" id="btn-check-interactions"
+        onclick="checkInteractions()"
+        style="background:var(--warning);margin-bottom:12px;">
+        Check interactions ⚠️
+      </button>
+      <div id="interaction-results"></div>
+    </div>
+    <div class="card">
+      <h2 id="lbl-current-meds">Current medications</h2>
+      <div id="medications-list"><p class="no-data">No medications added yet.</p></div>
+    </div>
+  </div>
+
+  <!-- PAGE 4: Export -->
+  <div class="page" id="page-export">
+    <div class="card">
+      <h2 id="lbl-export-title">Export for doctor visit</h2>
+      <p id="lbl-export-desc" style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;">
+        Generate a PDF summary to share with your doctor.
+      </p>
+      <div class="form-group">
+        <label id="lbl-from-date">From date</label>
+        <input type="date" id="export-from">
+      </div>
+      <div class="form-group">
+        <label id="lbl-to-date">To date</label>
+        <input type="date" id="export-to">
+      </div>
+      <button class="btn btn-primary" id="btn-download-pdf" onclick="exportPDF()">
+        Download PDF 📄
+      </button>
+    </div>
+    <div class="card">
+      <h2 id="lbl-your-stats">Your stats</h2>
+      <div id="stats-view"><p class="no-data">Loading...</p></div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="showPage('symptoms', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 12h6M12 9v6M12 2a10 10 0 100 20A10 10 0 0012 2z"/>
+      </svg>
+      <span id="nav-symptoms">Symptoms</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('mood', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
+      </svg>
+      <span id="nav-mood">Mood</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('medications', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0016.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 002 8.5c0 2.3 1.5 4.05 3 5.5l7 7 7-7z"/>
+      </svg>
+      <span id="nav-meds">Meds</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('export', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+      </svg>
+      <span id="nav-export">Export</span>
+    </button>
+  </nav>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="{{ url_for('static', filename='translations.js') }}"></script>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+
+</body>
+</html>
